@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-runtime
+FROM pytorch/pytorch:1.5.1-cuda10.1-cudnn7-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
