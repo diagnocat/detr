@@ -118,12 +118,25 @@ class SetCriterion(nn.Module):
                                     dtype=torch.int64, device=src_logits.device)
         target_classes[idx] = target_classes_o
 
-        loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight)
+        # LVIS-compatible masking using not_exhaustive_category_ids
+        predicted = src_logits.argmax(2)
+        keep = []
+        for pr, t in zip(predicted, targets):
+            undef_cat = t['not_exhaustive_category_ids']
+            keep.append(~((pr[None].expand(len(undef_cat), -1) == undef_cat[:, None]).any(0)))
+        keep = torch.stack(keep, 0)
+        per_element_weight = self.empty_weight[target_classes]
+        loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight, reduction='none')
+        loss_ce = loss_ce[keep].sum() / per_element_weight[keep].sum()
+        # before: loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight)
+        # end modification
+
         losses = {'loss_ce': loss_ce}
 
         if log:
             # TODO this should probably be a separate loss, not hacked in this one here
             losses['class_error'] = 100 - accuracy(src_logits[idx], target_classes_o)[0]
+
         return losses
 
     @torch.no_grad()

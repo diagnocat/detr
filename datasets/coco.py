@@ -27,6 +27,13 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         img, target = self.prepare(img, target)
         if self._transforms is not None:
             img, target = self._transforms(img, target)
+        # modification for LVIS format
+        image_meta = self.coco.imgs[image_id]
+        if 'not_exhaustive_category_ids' in image_meta:
+            target['not_exhaustive_category_ids'] = torch.as_tensor(image_meta['not_exhaustive_category_ids'])
+        if 'neg_category_ids' in image_meta:
+            target['neg_category_ids'] = torch.as_tensor(image_meta['neg_category_ids'])
+        # end modification for LVIS format
         return img, target
 
 
