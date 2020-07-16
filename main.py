@@ -83,6 +83,7 @@ def get_args_parser():
     parser.add_argument('--coco_path', type=str)
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
+    parser.add_argument('--lvis_format', action='store_true')
 
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')

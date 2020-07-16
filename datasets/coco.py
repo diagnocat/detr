@@ -15,9 +15,10 @@ import datasets.transforms as T
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):
-    def __init__(self, img_folder, ann_file, transforms, return_masks):
+    def __init__(self, img_folder, ann_file, transforms, return_masks, lvis_format):
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
+        self.lvis_format = lvis_format
         self.prepare = ConvertCocoPolysToMask(return_masks)
 
     def __getitem__(self, idx):
@@ -28,11 +29,12 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         if self._transforms is not None:
             img, target = self._transforms(img, target)
         # modification for LVIS format
-        image_meta = self.coco.imgs[image_id]
-        if 'not_exhaustive_category_ids' in image_meta:
-            target['not_exhaustive_category_ids'] = torch.as_tensor(image_meta['not_exhaustive_category_ids'])
-        if 'neg_category_ids' in image_meta:
-            target['neg_category_ids'] = torch.as_tensor(image_meta['neg_category_ids'])
+        if self.lvis_format:
+            image_meta = self.coco.imgs[image_id]
+            if 'not_exhaustive_category_ids' in image_meta:
+                target['not_exhaustive_category_ids'] = torch.as_tensor(image_meta['not_exhaustive_category_ids'])
+            if 'neg_category_ids' in image_meta:
+                target['neg_category_ids'] = torch.as_tensor(image_meta['neg_category_ids'])
         # end modification for LVIS format
         return img, target
 
@@ -161,5 +163,5 @@ def build(image_set, args):
     }
 
     img_folder, ann_file = PATHS[image_set]
-    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks)
+    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), lvis_format=args.lvis_format, return_masks=args.masks)
     return dataset
